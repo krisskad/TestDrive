@@ -10,6 +10,7 @@ class TestLog(models.Model):
     status_code = models.BooleanField(blank=True, null=True)
     json_validation = models.BooleanField(blank=True, null=True)
     response_time = models.FloatField(blank=True, null=True)
+    json_payload = models.TextField(blank=True, null=True)
     json_response = models.TextField(blank=True, null=True)
     link_checker = models.BooleanField(blank=True, null=True)
     exception = models.CharField(max_length=255, blank=True, null=True)

@@ -12,6 +12,7 @@ import pandas as pd
 import smtplib
 from email.message import EmailMessage
 from pretty_html_table import build_table
+import itertools
 
 logger = logging.getLogger('__name__')
 
@@ -117,7 +118,7 @@ def store_test_logs(logs):
 
     response = requests.request("POST", url, headers=headers, data=payload)
 
-    print(response.text)
+    print(response.json())
 
 
 def flatten(t):
@@ -148,8 +149,11 @@ def get_user_token(email, password):
         return None
 
 
-def get_data_listing(URL, HEADER):
-    profile = requests.get(URL + 'api/v1/profile/', headers=HEADER).json()
+def get_data_listing(URL=None, HEADER=None, PROFILE=None):
+    if PROFILE:
+        profile = PROFILE
+    else:
+        profile = requests.get(URL, headers=HEADER).json()
 
     # List of clients
     CLIENTS = list(profile["profileData"]["clients"].keys())
@@ -165,10 +169,14 @@ def get_data_listing(URL, HEADER):
         for ctry in country:
             RETAILERS += profile["profileData"]["country_retailer_access"][cli]["retailer_access"][ctry]
 
+    a = [CLIENTS, COUNTRIES, RETAILERS]
+    combinations = list(itertools.product(*a))
+
     result = {
         "clients":CLIENTS,
         "countries":COUNTRIES,
-        "retailers":RETAILERS
+        "retailers":RETAILERS,
+        "combinations":combinations
     }
 
     return result

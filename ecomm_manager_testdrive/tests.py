@@ -87,7 +87,8 @@ class GetTokenAPITestCase(TestCase):
             "test_name":self.test_name,
             "test_description":self.test_description,
             "exception":[],
-            "request_method":self.request_method
+            "request_method":self.request_method,
+            "json_payload": self.payload
         }
 
     def get(self):
@@ -169,7 +170,11 @@ class GetTokenAPITestCase(TestCase):
 
     def database(self):
         self.logs["exception"] = list(set(self.logs["exception"]))
-
+        self.logs["result"] = all([
+                self.logs["status_code"],
+                self.logs["json_validation"],
+                self.logs["link_checker"]
+            ])
         store_test_logs(self.logs)
 
     def mail_test_logs(self):
@@ -222,7 +227,8 @@ class GetProfileDataTestCase(TestCase):
             "test_name":self.test_name,
             "test_description":self.test_description,
             "exception":[],
-            "request_method":self.request_method
+            "request_method":self.request_method,
+            "json_payload":self.payload
         }
 
     def get(self):
@@ -318,7 +324,171 @@ class GetProfileDataTestCase(TestCase):
 
     def database(self):
         self.logs["exception"] = list(set(self.logs["exception"]))
+        self.logs["result"] = all([
+                self.logs["status_code"],
+                self.logs["json_validation"],
+                self.logs["link_checker"]
+            ])
+        store_test_logs(self.logs)
 
+    def mail_test_logs(self):
+        send_mail(self.logs)
+
+
+class CategoryBrandListTestCase(TestCase):
+    """
+    Test Cases:
+        Status code
+        JSON validation
+        Response time
+        Json Response
+        Link checker
+    """
+    def setUp(self) -> None:
+        self.url = URL + 'api/v1/category-brand-list'
+        # self.test_name = inspect.currentframe().f_code.co_name
+        self.test_name = 'Category Brand List API'
+        self.test_description = f"Category Brand List API Testing with" \
+                                f"all the combination of retailer, client and country" \
+                                f"generated from {EMAIL} profile data",
+        self.request_method = "POST"
+        self.header = HEADER
+
+        self.data = get_data_listing(URL+'api/v1/profile/', self.header)
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def test_run(self):
+        # running test for every payload
+        combinations = self.data["combinations"]
+        for client, country, retailer in combinations:
+            self.payload = {
+                "client": client,
+                "country": country,
+                "retailer": retailer
+            }
+            self.setup_logs()
+            if self.request_method.lower() == "get":
+                self.get()
+            elif self.request_method.lower() == "post":
+                self.post()
+
+            self.status_code()
+            self.json_validation()
+            self.response_time()
+            self.link_checker()
+            self.database()
+            # self.mail_test_logs()
+
+    def setup_logs(self):
+        self.logs = {
+            "api_endpoint": self.url,
+            "test_name":self.test_name,
+            "test_description":self.test_description,
+            "exception":[],
+            "request_method":self.request_method,
+            "json_payload":self.payload
+        }
+
+    def get(self):
+        self.response = requests.get(self.url, headers=self.header)
+        self.logs["json_response"] = self.response.json()
+
+    def post(self):
+        self.response = requests.post(self.url, data=self.payload, headers=self.header)
+        self.logs["json_response"] = self.response.json()
+
+    def status_code(self):
+        """
+        In this Test Case we are testing the 'api/v1/profile/'.
+        """
+        exception = None
+        is_passed = False
+
+        try:
+            # Write your code here
+            is_passed = self.response.status_code == status.HTTP_200_OK
+        except Exception as e:
+            exception = e
+
+        # Database
+        self.logs["status_code"] = is_passed
+        self.logs["exception"].append(exception)
+
+    def json_validation(self):
+        """
+        In this Test Case we are validating json keys.
+        """
+        exception = None
+        is_passed = False
+
+        try:
+            fetched = TestLog.objects.filter(test_name=self.test_name)
+            if fetched.exists():
+                golden_json = list(fetched.values_list("json_response", flat=True).distinct())[-1]
+
+                if self.logs["json_response"] == golden_json:
+                    is_passed = True
+                else:
+                    is_passed = False
+            else:
+
+                # Write your code here
+                if "brand" in self.logs["json_response"] and "category" in self.logs["json_response"]:
+                    is_passed = True
+                else:
+                    is_passed = False
+
+        except Exception as e:
+            exception = e
+
+        # Database
+        self.logs["json_validation"] = is_passed
+        self.logs["exception"].append(exception)
+
+    def response_time(self):
+        """
+        In this Test Case we are testing the 'api/v1/profile/'.
+        """
+        exception = None
+        response_time = 0
+        try:
+            # Write your code here
+            response_time = self.response.elapsed.total_seconds()
+        except Exception as e:
+            exception = e
+
+        # Database
+        self.logs["response_time"] = response_time
+        self.logs["exception"].append(exception)
+
+    def link_checker(self):
+        """
+        In this Test Case we are testing the 'api/v1/profile/'.
+        """
+        exception = None
+        is_passed = False
+
+        validator = URLValidator()
+        try:
+            validator(self.url)
+            is_passed = True
+        except ValidationError as e:
+            exception = e
+
+        # Database
+        self.logs["link_checker"] = is_passed
+        self.logs["exception"].append(exception)
+
+    def database(self):
+        self.logs["exception"] = list(set(self.logs["exception"]))
+        self.logs["result"] = all([
+                self.logs["status_code"],
+                self.logs["json_validation"],
+                self.logs["link_checker"]
+            ])
         store_test_logs(self.logs)
 
     def mail_test_logs(self):
