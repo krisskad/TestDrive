@@ -6,7 +6,7 @@ from .models import TestLog
 class TestLogAdmin(admin.ModelAdmin):
     list_display = ('api_endpoint','test_name', 'request_method',
                     'result','response_time','status_code','json_validation',
-                    'json_payload', 'json_response', 'link_checker',
+                    'json_response', 'link_checker',
                     'exception', 'test_description',
                     'created_at', 'updated_at')
     list_filter = ( 'test_name', 'request_method',

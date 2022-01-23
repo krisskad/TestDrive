@@ -115,10 +115,10 @@ def store_test_logs(logs):
     headers = {
         'Content-Type': 'application/json'
     }
-
+    # print(payload)
     response = requests.request("POST", url, headers=headers, data=payload)
 
-    print(response.json())
+    # print(response.json())
 
 
 def flatten(t):
@@ -172,6 +172,9 @@ def get_data_listing(URL=None, HEADER=None, PROFILE=None):
     a = [CLIENTS, COUNTRIES, RETAILERS]
     combinations = list(itertools.product(*a))
 
+    # print(profile)
+    # print(a)
+    # print(combinations)
     result = {
         "clients":CLIENTS,
         "countries":COUNTRIES,

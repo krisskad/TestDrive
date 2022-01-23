@@ -16,6 +16,7 @@ from django.test import TestCase, TransactionTestCase, LiveServerTestCase
 
 from rest_framework import status
 import requests
+import json
 import datetime
 from .models import TestLog
 
@@ -28,17 +29,20 @@ EMAIL = 'gokulkrishnan@ongil.io'
 PASSWORD = 'Admin@123'
 
 # Making user token global
-TOKEN = get_user_token(
-    email=EMAIL,
-    password=PASSWORD
-)
+try:
+    TOKEN = get_user_token(
+        email=EMAIL,
+        password=PASSWORD
+    )
 
-HEADER = {
-  'Authorization': f'Token {TOKEN}',
-  'Content-Type': 'application/json'
-}
+    HEADER = {
+      'Authorization': f'Token {TOKEN}',
+      'Content-Type': 'application/json'
+    }
 
-PROFILE_DATA = get_data_listing(URL, HEADER)
+    PROFILE_DATA = get_data_listing(URL+'api/v1/profile/', HEADER)
+except Exception as e:
+    print(e)
 
 
 class GetTokenAPITestCase(TestCase):
@@ -93,11 +97,9 @@ class GetTokenAPITestCase(TestCase):
 
     def get(self):
         self.response = requests.get(self.url, headers=self.header)
-        self.logs["json_response"] = self.response.json()
 
     def post(self):
         self.response = requests.post(self.url, data=self.payload)
-        self.logs["json_response"] = self.response.json()
 
     def status_code(self):
         """
@@ -109,6 +111,7 @@ class GetTokenAPITestCase(TestCase):
         try:
             # Write your code here
             is_passed = self.response.status_code == status.HTTP_200_OK
+            self.logs["json_response"] = self.response.json()
         except Exception as e:
             exception = e
 
@@ -198,10 +201,7 @@ class GetProfileDataTestCase(TestCase):
         self.request_method = "GET"
         self.header = HEADER
 
-        self.payload = {
-            'email': EMAIL,
-            'password': PASSWORD
-        }
+        self.payload = {}
 
     @classmethod
     def tearDownClass(cls):
@@ -233,11 +233,9 @@ class GetProfileDataTestCase(TestCase):
 
     def get(self):
         self.response = requests.get(self.url, headers=self.header)
-        self.logs["json_response"] = self.response.json()
 
     def post(self):
         self.response = requests.post(self.url, data=self.payload)
-        self.logs["json_response"] = self.response.json()
 
     def status_code(self):
         """
@@ -249,6 +247,7 @@ class GetProfileDataTestCase(TestCase):
         try:
             # Write your code here
             is_passed = self.response.status_code == status.HTTP_200_OK
+            self.logs["json_response"] = self.response.json()
         except Exception as e:
             exception = e
 
@@ -394,15 +393,15 @@ class CategoryBrandListTestCase(TestCase):
 
     def get(self):
         self.response = requests.get(self.url, headers=self.header)
-        self.logs["json_response"] = self.response.json()
 
     def post(self):
-        self.response = requests.post(self.url, data=self.payload, headers=self.header)
-        self.logs["json_response"] = self.response.json()
+        # print(self.payload)
+        self.response = requests.post(self.url, data=json.dumps(self.payload), headers=self.header)
+        # print(self.response)
 
     def status_code(self):
         """
-        In this Test Case we are testing the 'api/v1/profile/'.
+        In this Test Case we are testing the 'api/v1/category-brand-list'.
         """
         exception = None
         is_passed = False
@@ -410,6 +409,7 @@ class CategoryBrandListTestCase(TestCase):
         try:
             # Write your code here
             is_passed = self.response.status_code == status.HTTP_200_OK
+            self.logs["json_response"] = self.response.json()
         except Exception as e:
             exception = e
 
@@ -425,7 +425,7 @@ class CategoryBrandListTestCase(TestCase):
         is_passed = False
 
         try:
-            fetched = TestLog.objects.filter(test_name=self.test_name)
+            fetched = TestLog.objects.filter(json_payload__iexact=self.payload)
             if fetched.exists():
                 golden_json = list(fetched.values_list("json_response", flat=True).distinct())[-1]
 
@@ -450,7 +450,7 @@ class CategoryBrandListTestCase(TestCase):
 
     def response_time(self):
         """
-        In this Test Case we are testing the 'api/v1/profile/'.
+        In this Test Case we are testing the 'api/v1/category-brand-list'.
         """
         exception = None
         response_time = 0
@@ -466,7 +466,7 @@ class CategoryBrandListTestCase(TestCase):
 
     def link_checker(self):
         """
-        In this Test Case we are testing the 'api/v1/profile/'.
+        In this Test Case we are testing the 'api/v1/category-brand-list'.
         """
         exception = None
         is_passed = False
